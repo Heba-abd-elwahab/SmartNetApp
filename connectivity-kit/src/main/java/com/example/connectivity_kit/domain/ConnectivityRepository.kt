@@ -4,4 +4,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface ConnectivityRepository {
     fun observeNetworkStatus(): Flow<ConnectionStatus>
+    suspend fun performSpeedTest(): SpeedTestResult
 }

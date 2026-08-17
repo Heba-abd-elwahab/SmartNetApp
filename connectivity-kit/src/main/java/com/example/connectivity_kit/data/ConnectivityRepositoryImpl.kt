@@ -20,8 +20,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-internal class ConnectivityRepositoryImpl @Inject constructor(private val connectivityManager: ConnectivityManager
+internal class ConnectivityRepositoryImpl @Inject constructor(
+    private val connectivityManager: ConnectivityManager,
+    private val speedTestEngine: SpeedTestEngine
 ) : ConnectivityRepository {
+
+    override suspend fun performSpeedTest(): com.example.connectivity_kit.domain.SpeedTestResult {
+        return speedTestEngine.performSpeedTest()
+    }
+
     override fun observeNetworkStatus(): Flow<ConnectionStatus> = callbackFlow {
         fun getCapabilitiesType(capabilities: NetworkCapabilities?): ConnectionType {
             if (capabilities == null) return ConnectionType.UNKNOWN
@@ -35,7 +42,7 @@ internal class ConnectivityRepositoryImpl @Inject constructor(private val connec
 
         suspend fun doesNetworkHaveInternet(): Boolean = withContext(Dispatchers.IO) {
             try {
-                val url = URL("http://clients3.google.com/generate_204")
+                val url = URL("https://clients3.google.com/generate_204")
                 val connection = url.openConnection() as HttpURLConnection
                 connection.requestMethod = "HEAD"
                 connection.connectTimeout = 1500

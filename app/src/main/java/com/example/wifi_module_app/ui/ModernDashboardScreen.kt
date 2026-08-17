@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SignalCellularAlt
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -99,6 +100,9 @@ fun ModernDashboardScreen(
                     )
                 )
 
+                val speedTestResult by viewModel.speedTestResult.collectAsStateWithLifecycle()
+                val isSpeedTestRunning by viewModel.isSpeedTestRunning.collectAsStateWithLifecycle()
+
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -112,6 +116,35 @@ fun ModernDashboardScreen(
                             icon = getInterfaceIcon(connectionStatus),
                             accentColor = PastelBlueAccent
                         )
+                    }
+                    item {
+                        val downloadSpeed = speedTestResult?.downloadMbps?.let { "%.1f Mbps".format(it) } ?: "-- Mbps"
+                        val uploadSpeed = speedTestResult?.uploadMbps?.let { "%.1f Mbps".format(it) } ?: "-- Mbps"
+                        MetricCard(
+                            title = "Throughput",
+                            value = "↓ $downloadSpeed\n↑ $uploadSpeed",
+                            icon = Icons.Default.Speed,
+                            accentColor = Color(0xFF48BB78)
+                        )
+                    }
+                }
+                
+                androidx.compose.material3.Button(
+                    onClick = { viewModel.runSpeedTest() },
+                    enabled = !isSpeedTestRunning,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = PastelBlueAccent
+                    )
+                ) {
+                    if (isSpeedTestRunning) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Text(text = "Run Speed Test", style = MaterialTheme.typography.titleMedium.copy(color = Color.White, fontWeight = FontWeight.Bold))
                     }
                 }
             }

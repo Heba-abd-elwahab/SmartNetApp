@@ -26,22 +26,28 @@ import javax.inject.Provider;
 public final class ConnectivityRepositoryImpl_Factory implements Factory<ConnectivityRepositoryImpl> {
   private final Provider<ConnectivityManager> connectivityManagerProvider;
 
+  private final Provider<SpeedTestEngine> speedTestEngineProvider;
+
   public ConnectivityRepositoryImpl_Factory(
-      Provider<ConnectivityManager> connectivityManagerProvider) {
+      Provider<ConnectivityManager> connectivityManagerProvider,
+      Provider<SpeedTestEngine> speedTestEngineProvider) {
     this.connectivityManagerProvider = connectivityManagerProvider;
+    this.speedTestEngineProvider = speedTestEngineProvider;
   }
 
   @Override
   public ConnectivityRepositoryImpl get() {
-    return newInstance(connectivityManagerProvider.get());
+    return newInstance(connectivityManagerProvider.get(), speedTestEngineProvider.get());
   }
 
   public static ConnectivityRepositoryImpl_Factory create(
-      Provider<ConnectivityManager> connectivityManagerProvider) {
-    return new ConnectivityRepositoryImpl_Factory(connectivityManagerProvider);
+      Provider<ConnectivityManager> connectivityManagerProvider,
+      Provider<SpeedTestEngine> speedTestEngineProvider) {
+    return new ConnectivityRepositoryImpl_Factory(connectivityManagerProvider, speedTestEngineProvider);
   }
 
-  public static ConnectivityRepositoryImpl newInstance(ConnectivityManager connectivityManager) {
-    return new ConnectivityRepositoryImpl(connectivityManager);
+  public static ConnectivityRepositoryImpl newInstance(ConnectivityManager connectivityManager,
+      SpeedTestEngine speedTestEngine) {
+    return new ConnectivityRepositoryImpl(connectivityManager, speedTestEngine);
   }
 }
