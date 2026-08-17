@@ -7,10 +7,15 @@ import android.net.NetworkRequest
 import com.example.connectivity_kit.domain.ConnectionStatus
 import com.example.connectivity_kit.domain.ConnectionType
 import com.example.connectivity_kit.domain.ConnectivityRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -28,45 +33,67 @@ internal class ConnectivityRepositoryImpl @Inject constructor(private val connec
             }
         }
 
-        fun getCurrentStatus(): ConnectionStatus {
-            return try {
-                val activeNetwork = connectivityManager.activeNetwork
-                if (activeNetwork != null) {
-                    val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
-                    if (capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
-                        ConnectionStatus.Available(getCapabilitiesType(capabilities))
-                    } else {
-                        ConnectionStatus.Unavailable
-                    }
-                } else {
-                    ConnectionStatus.Unavailable
-                }
+        suspend fun doesNetworkHaveInternet(): Boolean = withContext(Dispatchers.IO) {
+            try {
+                val url = URL("http://clients3.google.com/generate_204")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "HEAD"
+                connection.connectTimeout = 1500
+                connection.readTimeout = 1500
+                connection.connect()
+                val responseCode = connection.responseCode
+                connection.disconnect()
+                responseCode == 204
             } catch (e: Exception) {
-                ConnectionStatus.Unavailable
+                false
+            }
+        }
+
+        fun checkInternetAndSendStatus(capabilities: NetworkCapabilities?) {
+            val type = getCapabilitiesType(capabilities)
+            if (capabilities == null) {
+                trySend(ConnectionStatus.Unavailable)
+                return
+            }
+            if (capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+                trySend(ConnectionStatus.Available(type))
+            } else if (capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
+                launch {
+                    if (doesNetworkHaveInternet()) {
+                        trySend(ConnectionStatus.Available(type))
+                    } else {
+                        trySend(ConnectionStatus.Unavailable)
+                    }
+                }
+            } else {
+                trySend(ConnectionStatus.Unavailable)
+            }
+        }
+
+        fun checkCurrentStatus() {
+            try {
+                val activeNetwork = connectivityManager.activeNetwork
+                val capabilities = if (activeNetwork != null) connectivityManager.getNetworkCapabilities(activeNetwork) else null
+                checkInternetAndSendStatus(capabilities)
+            } catch (e: Exception) {
+                trySend(ConnectionStatus.Unavailable)
             }
         }
 
         // Emit initial connectivity state immediately upon subscription
-        trySend(getCurrentStatus())
+        checkCurrentStatus()
 
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 val capabilities = connectivityManager.getNetworkCapabilities(network)
-                val type = getCapabilitiesType(capabilities)
-                trySend(ConnectionStatus.Available(type))
+                checkInternetAndSendStatus(capabilities)
             }
 
             override fun onCapabilitiesChanged(
                 network: Network,
                 networkCapabilities: NetworkCapabilities
             ) {
-                val hasInternet = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                if (hasInternet) {
-                    val type = getCapabilitiesType(networkCapabilities)
-                    trySend(ConnectionStatus.Available(type))
-                } else {
-                    trySend(ConnectionStatus.Unavailable)
-                }
+                checkInternetAndSendStatus(networkCapabilities)
             }
 
             override fun onLosing(network: Network, maxMsToLive: Int) {
@@ -76,12 +103,7 @@ internal class ConnectivityRepositoryImpl @Inject constructor(private val connec
             }
 
             override fun onLost(network: Network) {
-                val current = getCurrentStatus()
-                if (current is ConnectionStatus.Available) {
-                    trySend(current)
-                } else {
-                    trySend(ConnectionStatus.Lost)
-                }
+                checkCurrentStatus()
             }
 
             override fun onUnavailable() {

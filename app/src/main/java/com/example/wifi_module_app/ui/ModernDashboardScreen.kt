@@ -17,10 +17,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.SignalCellularAlt
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,7 +33,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +44,13 @@ import com.example.connectivity_kit.domain.ConnectionType
 import com.example.connectivity_kit.presentation.ConnectivityViewModel
 import com.example.connectivity_kit.presentation.ModernConnectivityBanner
 
+// Color Palette for Minimalist UI
+private val BackgroundColor = Color(0xFFF5F7FA) // Soft light-gray
+private val CardBackgroundColor = Color.White
+private val DarkSlateText = Color(0xFF2D3748)
+private val DarkSlateTextMuted = Color(0xFF718096)
+private val PastelBlueAccent = Color(0xFF8BA5D2) // Pastel blue
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModernDashboardScreen(
@@ -55,16 +58,20 @@ fun ModernDashboardScreen(
 ) {
     val connectionStatus by viewModel.connectionStatus.collectAsStateWithLifecycle()
     Scaffold(
+        containerColor = BackgroundColor,
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         text = "Network Monitor",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = DarkSlateText
+                        )
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = BackgroundColor
                 )
             )
         },
@@ -77,8 +84,8 @@ fun ModernDashboardScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(horizontal = 24.dp), // Generous whitespace
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 Spacer(modifier = Modifier.height(4.dp))
 
@@ -86,14 +93,16 @@ fun ModernDashboardScreen(
 
                 Text(
                     text = "System Metrics",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(top = 8.dp)
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = DarkSlateText
+                    )
                 )
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     item {
@@ -101,7 +110,7 @@ fun ModernDashboardScreen(
                             title = "Active Interface",
                             value = getInterfaceName(connectionStatus),
                             icon = getInterfaceIcon(connectionStatus),
-                            accentColor = Color(0xFF673AB7)
+                            accentColor = PastelBlueAccent
                         )
                     }
                 }
@@ -117,50 +126,47 @@ fun ModernDashboardScreen(
 
 @Composable
 private fun HeaderCard(connectionStatus: ConnectionStatus) {
-    val gradientColors = when (connectionStatus) {
-        is ConnectionStatus.Available -> listOf(Color(0xFF1E88E5), Color(0xFF1565C0))
-        is ConnectionStatus.Losing -> listOf(Color(0xFFFB8C00), Color(0xFFEF6C00))
-        is ConnectionStatus.Lost, ConnectionStatus.Unavailable -> listOf(Color(0xFFE53935), Color(0xFFC62828))
+    val statusColor = when (connectionStatus) {
+        is ConnectionStatus.Available -> PastelBlueAccent
+        is ConnectionStatus.Losing -> Color(0xFFF6AD55) // Muted orange
+        is ConnectionStatus.Lost, ConnectionStatus.Unavailable -> Color(0xFFFC8181) // Muted red
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp)),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp), // More rounded corners
+        colors = CardDefaults.cardColors(containerColor = CardBackgroundColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Flat design
     ) {
         Box(
             modifier = Modifier
-                .background(Brush.horizontalGradient(gradientColors))
-                .padding(20.dp)
+                .padding(24.dp)
                 .fillMaxWidth()
         ) {
             Column {
                 Text(
-                    text = "Welcome Back",
-                    style = MaterialTheme.typography.labelLarge.copy(color = Color.White.copy(alpha = 0.8f))
+                    text = "Overall Network Status",
+                    style = MaterialTheme.typography.labelLarge.copy(color = DarkSlateTextMuted)
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Connectivity Hub",
                     style = MaterialTheme.typography.headlineSmall.copy(
-                        color = Color.White,
+                        color = DarkSlateText,
                         fontWeight = FontWeight.Bold
                     )
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(10.dp)
+                            .size(12.dp)
                             .clip(CircleShape)
-                            .background(
-                                if (connectionStatus is ConnectionStatus.Available) Color.Green else Color.Red
-                            )
+                            .background(statusColor)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = when (connectionStatus) {
                             is ConnectionStatus.Available -> "Online (${formatType(connectionStatus.type)})"
@@ -169,7 +175,7 @@ private fun HeaderCard(connectionStatus: ConnectionStatus) {
                             is ConnectionStatus.Unavailable -> "Disconnected"
                         },
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = Color.White,
+                            color = DarkSlateText,
                             fontWeight = FontWeight.Medium
                         )
                     )
@@ -188,17 +194,17 @@ private fun MetricCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = CardBackgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(40.dp)
                     .clip(CircleShape)
                     .background(accentColor.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
@@ -207,20 +213,20 @@ private fun MetricCard(
                     imageVector = icon,
                     contentDescription = null,
                     tint = accentColor,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                style = MaterialTheme.typography.labelMedium.copy(color = DarkSlateTextMuted)
             )
 
             Text(
                 text = value,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = DarkSlateText
                 )
             )
         }
@@ -248,3 +254,4 @@ private fun formatType(type: ConnectionType): String = when (type) {
     ConnectionType.ETHERNET -> "Ethernet"
     ConnectionType.UNKNOWN -> "Unknown"
 }
+
