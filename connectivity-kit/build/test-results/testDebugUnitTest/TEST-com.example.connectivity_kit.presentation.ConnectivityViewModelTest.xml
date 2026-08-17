@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.connectivity_kit.presentation.ConnectivityViewModelTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-11T12:07:22.220Z" hostname="Hebas-Mac-mini.local" time="0.559">
+  <properties/>
+  <testcase name="connectionStatus exposes flow state from use case" classname="com.example.connectivity_kit.presentation.ConnectivityViewModelTest" time="0.559"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
